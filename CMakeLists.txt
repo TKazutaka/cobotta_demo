@@ -3,13 +3,15 @@ project(cobotta_demo)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  tf
+  tf2_ros
+  geometry_msgs
 )
 
 catkin_package(
   CATKIN_DEPENDS
     roscpp
-    tf
+    tf2_ros
+    geometry_msgs
 )
 
 include_directories(
@@ -20,10 +22,10 @@ include_directories(
 ## Build ##
 ###########
 
-add_executable(crop_cloud_node
-  src/crop_cloud.cpp
-  src/crop_cloud_node.cpp)
-target_link_libraries(crop_cloud_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(cobotta_server
+  src/cobotta_server.cpp
+)
+target_link_libraries(cobotta_server ${catkin_LIBRARIES})
 
 ###########
 # Install #
