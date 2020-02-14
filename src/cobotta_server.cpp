@@ -43,12 +43,18 @@ int main(int argc, char** argv)
   std::string object_name = object_basename + "_" + to_string(object_number);
 
   std::vector<geometry_msgs::TransformStamped> object_transforms;
+  std::vector<geometry_msgs::TransformStamped> client1_trasforms;
+  std::vector<geometry_msgs::TransformStamped> client2_trasforms;
+  std::vector<geometry_msgs::TransformStamped> client3_trasforms;
+  std::vector<std::vector<geometry_msgs::TransformStamped>> client_trasforms = {client1_trasforms, client2_trasforms, client3_trasforms};
   geometry_msgs::TransformStamped object_transform;
+
   const int buf_size = 8000;
   double object_transform_data[buf_size];
   memset(object_transform_data, 0, sizeof(object_transform_data));
 
   int sockfd, client1_sockfd, client2_sockfd, client3_sockfd;
+  int client_sockfds[3];
   struct sockaddr_in addr, from_addr;
   socklen_t socklen = sizeof(struct sockaddr_in);
   const int port_num = nh.param<int>("port_num", 50000);
@@ -82,6 +88,10 @@ int main(int argc, char** argv)
     perror("accept3");
   }
 
+  client_sockfds[0] = client1_sockfd;
+  client_sockfds[1] = client2_sockfd;
+  client_sockfds[2] = client3_sockfd;
+
   ros::Time lookup_time = ros::Time(0);
 
   while(true)
@@ -103,7 +113,33 @@ int main(int argc, char** argv)
 
   std::cout << object_transforms.size() << std::endl;
 
+  // Add algorithm for distribute tasks to each client here
+  int robot_num = 0;
+  for(auto trans : object_transforms)
+  {
+    client_trasforms[robot_num].push_back(trans);
+    robot_num++;
+    if(robot_num < 2)
+    {
+      robot_num = 0;
+    }
+  }
+  // end dummy argorithm
 
+  robot_num = 0;
+  for(auto client_trasform : client_trasforms)
+  {
+    for(auto trans : client_trasform)
+    {
+      transform_to_array(trans, object_transform_data);
+      write(client_sockfds[robot_num], object_transform_data, buf_size);
+    }
+  }
+
+  close(client1_sockfd);
+  close(client2_sockfd);
+  close(client3_sockfd);
+  close(sockfd);
 
   return 0;
 }
