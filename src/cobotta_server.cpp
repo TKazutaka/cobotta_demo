@@ -1,10 +1,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <ros/ros.h>
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -43,10 +45,10 @@ int main(int argc, char** argv)
   std::string object_name = object_basename + "_" + to_string(object_number);
 
   std::vector<geometry_msgs::TransformStamped> object_transforms;
-  std::vector<geometry_msgs::TransformStamped> client1_trasforms;
-  std::vector<geometry_msgs::TransformStamped> client2_trasforms;
-  std::vector<geometry_msgs::TransformStamped> client3_trasforms;
-  std::vector<std::vector<geometry_msgs::TransformStamped>> client_trasforms = {client1_trasforms, client2_trasforms, client3_trasforms};
+  std::unordered_map<std::string, std::vector<geometry_msgs::TransformStamped>> client_trasforms;
+  client_trasforms["cobotta_center"] = std::vector<geometry_msgs::TransformStamped>();
+  client_trasforms["cobotta_right"] = std::vector<geometry_msgs::TransformStamped>();
+  client_trasforms["cobotta_left"] = std::vector<geometry_msgs::TransformStamped>();
   geometry_msgs::TransformStamped object_transform;
 
   const int buf_size = 8000;
@@ -54,8 +56,14 @@ int main(int argc, char** argv)
   memset(object_transform_data, 0, sizeof(object_transform_data));
 
   int sockfd, client1_sockfd, client2_sockfd, client3_sockfd;
-  int client_sockfds[3];
+  std::unordered_map<std::string, std::string> clients_name_info = {
+    {"192.168.1.1", "cobotta_center"},
+    {"192.168.1.2", "cobotta_right"},
+    {"192.168.1.3", "cobotta_left"},
+  };
+  std::unordered_map<std::string, int> clients_sockfd_info;
   struct sockaddr_in addr, from_addr;
+  struct in_addr inaddr;
   socklen_t socklen = sizeof(struct sockaddr_in);
   const int port_num = nh.param<int>("port_num", 50000);
 
@@ -77,6 +85,9 @@ int main(int argc, char** argv)
   {
     perror("accept1");
   }
+  inaddr.s_addr = from_addr.sin_addr.s_addr;
+  clients_sockfd_info[inet_ntoa(inaddr)] = client1_sockfd;
+  ROS_INFO("%s connected.", inet_ntoa(inaddr));
 
   if((client2_sockfd = accept(sockfd, (struct sockaddr*)&from_addr, &socklen)) < 0)
   {
@@ -87,10 +98,6 @@ int main(int argc, char** argv)
   {
     perror("accept3");
   }
-
-  client_sockfds[0] = client1_sockfd;
-  client_sockfds[1] = client2_sockfd;
-  client_sockfds[2] = client3_sockfd;
 
   ros::Time lookup_time = ros::Time(0);
 
@@ -115,9 +122,12 @@ int main(int argc, char** argv)
 
   // Add algorithm for distribute tasks to each client here
   int robot_num = 0;
+  std::string robot_names[] = {
+    "cobotta_center", "cobotta_right", "cobotta_left"
+  };
   for(auto trans : object_transforms)
   {
-    client_trasforms[robot_num].push_back(trans);
+    client_trasforms[robot_names[robot_num]].push_back(trans);
     robot_num++;
     if(robot_num < 2)
     {
@@ -129,10 +139,11 @@ int main(int argc, char** argv)
   robot_num = 0;
   for(auto client_trasform : client_trasforms)
   {
-    for(auto trans : client_trasform)
+    for(auto trans : client_trasform.second)
     {
+      // TODO: convert TF from world frame to based on each robot base frame
       transform_to_array(trans, object_transform_data);
-      write(client_sockfds[robot_num], object_transform_data, buf_size);
+      write(clients_sockfd_info[client_trasform.first], object_transform_data, buf_size);
     }
   }
 
