@@ -57,9 +57,9 @@ int main(int argc, char** argv)
 
   int sockfd, client1_sockfd, client2_sockfd, client3_sockfd;
   std::unordered_map<std::string, std::string> clients_name_info = {
-    {"192.168.1.1", "cobotta_center"},
-    {"192.168.1.2", "cobotta_right"},
-    {"192.168.1.3", "cobotta_left"},
+    {"192.168.0.101", "cobotta_center"},
+    {"192.168.0.102", "cobotta_right"},
+    {"192.168.0.103", "cobotta_left"},
   };
   std::unordered_map<std::string, int> clients_sockfd_info;
   struct sockaddr_in addr, from_addr;
@@ -86,18 +86,24 @@ int main(int argc, char** argv)
     perror("accept1");
   }
   inaddr.s_addr = from_addr.sin_addr.s_addr;
-  clients_sockfd_info[inet_ntoa(inaddr)] = client1_sockfd;
+  clients_sockfd_info[clients_name_info[inet_ntoa(inaddr)]] = client1_sockfd;
   ROS_INFO("%s connected.", inet_ntoa(inaddr));
 
   if((client2_sockfd = accept(sockfd, (struct sockaddr*)&from_addr, &socklen)) < 0)
   {
     perror("accept2");
   }
+  inaddr.s_addr = from_addr.sin_addr.s_addr;
+  clients_sockfd_info[clients_name_info[inet_ntoa(inaddr)]] = client2_sockfd;
+  ROS_INFO("%s connected.", inet_ntoa(inaddr));
 
   if((client3_sockfd = accept(sockfd, (struct sockaddr*)&from_addr, &socklen)) < 0)
   {
     perror("accept3");
   }
+  inaddr.s_addr = from_addr.sin_addr.s_addr;
+  clients_sockfd_info[clients_name_info[inet_ntoa(inaddr)]] = client3_sockfd;
+  ROS_INFO("%s connected.", inet_ntoa(inaddr));
 
   ros::Time lookup_time = ros::Time(0);
 
