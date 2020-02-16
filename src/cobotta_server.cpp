@@ -165,7 +165,7 @@ int main(int argc, char** argv)
   std::cout <<client_trasforms["cobotta_center"].size()<< std::endl;
   std::cout <<client_trasforms["cobotta_left"].size()<< std::endl;
   std::cout <<client_trasforms["cobotta_right"].size()<< std::endl;
-  robot_num = 0;gi
+  robot_num = 0;
   for(auto client_trasform : client_trasforms)
   {
     for(auto trans : client_trasform.second)
