@@ -44,7 +44,7 @@ int main(int argc, char** argv)
   unsigned int object_number = 1;
   std::string object_name = object_basename + "_" + to_string(object_number);
 
-  std::vector<geometry_msgs::TransformStamped> object_transforms;
+  std::unordered_map<std::string, std::vector<geometry_msgs::TransformStamped>> object_transforms;
   std::unordered_map<std::string, std::vector<geometry_msgs::TransformStamped>> client_trasforms;
   client_trasforms["cobotta_center"] = std::vector<geometry_msgs::TransformStamped>();
   client_trasforms["cobotta_right"] = std::vector<geometry_msgs::TransformStamped>();
@@ -113,18 +113,16 @@ int main(int argc, char** argv)
     {
       std::cout << object_name << std::endl;
       object_transform = tf_buffer.lookupTransform(reference_link_name, object_name, lookup_time, ros::Duration(timeout));
+      object_transforms[object_name].push_back(object_transform);
     }
     catch(tf2::TransformException &ex)
     {
       ROS_INFO("Found %d objects", object_number - 1);
       break;
     }
-    object_transforms.push_back(object_transform);
     object_number++;
     object_name = object_basename + "_" + to_string(object_number);
   }
-
-  std::cout << object_transforms.size() << std::endl;
 
   // Add algorithm for distribute tasks to each client here
   int robot_num = 0;
@@ -133,7 +131,15 @@ int main(int argc, char** argv)
   };
   for(auto trans : object_transforms)
   {
-    client_trasforms[robot_names[robot_num]].push_back(trans);
+    try
+    {
+      object_transform = tf_buffer.lookupTransform(robot_names[robot_num], trans.first + "_" + "static", lookup_time, ros::Duration(timeout));
+    }
+    catch(tf2::TransformException &ex)
+    {
+      ROS_ERROR("Cannot find %s objects", trans.first + "_" + "static");
+    }
+    client_trasforms[robot_names[robot_num]].push_back(object_transform);
     robot_num++;
     if(robot_num < 2)
     {
