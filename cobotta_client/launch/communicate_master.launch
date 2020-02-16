@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="port_number" default="1234" />
+  <arg name="object_pose_buffer_size" default="10000" />
+  <arg name="message_buffer_size" default="1000" />
+  <arg name="master_ip_address" default="None" />
+  <arg name="grasp_offset" default="0.1" />
+
+  <node pkg="cobotta_client" type="communicate_master" name="communicate_master_node" output="screen">
+    <param name="port_number" value="$(arg port_number)" />
+    <param name="object_pose_buffer_size" value="$(arg object_pose_buffer_size)" />
+    <param name="message_buffer_size" value="$(arg message_buffer_size)" />
+    <param name="master_ip_address" value="$(arg master_ip_address)" />
+    <param name="grasp_offset" value="$(arg grasp_offset)" />
+  </node>
+</launch>
