@@ -23,10 +23,10 @@ void transform_to_array(geometry_msgs::TransformStamped transform, double* data_
   data_array[0] = transform.transform.translation.x;
   data_array[1] = transform.transform.translation.y;
   data_array[2] = transform.transform.translation.z;
-  data_array[3] = transform.transform.rotation.x;
-  data_array[4] = transform.transform.rotation.y;
-  data_array[5] = transform.transform.rotation.z;
-  data_array[6] = transform.transform.rotation.w;
+  //data_array[3] = transform.transform.rotation.x;
+  //data_array[4] = transform.transform.rotation.y;
+  //data_array[5] = transform.transform.rotation.z;
+  //data_array[6] = transform.transform.rotation.w;
 }
 
 
@@ -51,15 +51,15 @@ int main(int argc, char** argv)
   client_trasforms["cobotta_left"] = std::vector<geometry_msgs::TransformStamped>();
   geometry_msgs::TransformStamped object_transform;
 
-  const int buf_size = 8000;
-  double object_transform_data[buf_size];
+  const int buf_size = 24;
+  double object_transform_data[3];
   memset(object_transform_data, 0, sizeof(object_transform_data));
 
   int sockfd, client1_sockfd, client2_sockfd, client3_sockfd;
   std::unordered_map<std::string, std::string> clients_name_info = {
-    {"192.168.0.101", "cobotta_center"},
-    {"192.168.0.102", "cobotta_right"},
-    {"192.168.0.103", "cobotta_left"},
+    {"192.168.1.101", "cobotta_center"},
+    {"192.168.1.102", "cobotta_right"},
+    {"192.168.1.103", "cobotta_left"},
   };
   std::unordered_map<std::string, int> clients_sockfd_info;
   struct sockaddr_in addr, from_addr;
@@ -67,9 +67,24 @@ int main(int argc, char** argv)
   socklen_t socklen = sizeof(struct sockaddr_in);
   const int port_num = nh.param<int>("port_num", 50000);
 
+  if ((sockfd= socket(AF_INET, SOCK_STREAM, 0)) <0)
+  {
+   perror("socket");
+  }
+
+
   addr.sin_family = AF_INET;
   addr.sin_port = htons(50000);
   addr.sin_addr.s_addr = INADDR_ANY;
+
+  int yes = 1;
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(yes)) < 0)
+  {
+    perror("ERROR on setsockopt");
+    exit(1);
+  }
+
 
   if(bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) < 0)
   {
@@ -141,20 +156,25 @@ int main(int argc, char** argv)
     }
     client_trasforms[robot_names[robot_num]].push_back(object_transform);
     robot_num++;
-    if(robot_num < 2)
+    if(robot_num > 2)
     {
       robot_num = 0;
     }
   }
   // end dummy argorithm
-
-  robot_num = 0;
+  std::cout <<client_trasforms["cobotta_center"].size()<< std::endl;
+  std::cout <<client_trasforms["cobotta_left"].size()<< std::endl;
+  std::cout <<client_trasforms["cobotta_right"].size()<< std::endl;
+  robot_num = 0;gi
   for(auto client_trasform : client_trasforms)
   {
     for(auto trans : client_trasform.second)
     {
-      // TODO: convert TF from world frame to based on each robot base frame
-      transform_to_array(trans, object_transform_data);
+      //transform_to_array(trans, object_transform_data);
+      std::cout <<trans.transform.translation.x<< std::endl;
+      object_transform_data[0] = trans.transform.translation.x;
+      object_transform_data[1] = trans.transform.translation.y;
+      object_transform_data[2] = trans.transform.translation.z;
       write(clients_sockfd_info[client_trasform.first], object_transform_data, buf_size);
     }
   }
