@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="port_number" default="1234" />
-  <arg name="object_pose_buffer_size" default="10000" />
+  <arg name="object_pose_buffer_size" default="24" />
   <arg name="message_buffer_size" default="1000" />
   <arg name="master_ip_address" default="None" />
   <arg name="grasp_offset" default="0.1" />

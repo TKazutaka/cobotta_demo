@@ -8,7 +8,7 @@
 #include <denso_gripper_srvs/ActivateGripper.h>
 #include <denso_gripper_srvs/Move.h>
 
-static const int MIN_BUFFER_SIZE = 100;
+static const int MIN_BUFFER_SIZE = 10;
 static const int MAX_BUFFER_SIZE = 100000;
 static const double WORK_OFFSET = 0.05;
 
@@ -18,7 +18,7 @@ using communicate_master::CommunicateMaster;
 CommunicateMaster::CommunicateMaster(ros::NodeHandle& nh) : nh_(nh), sockfd_(-1)
 {
   ros::param::param<int>("~port_number", port_number_, 1234); // port number for socket
-  ros::param::param<int>("~object_pose_buffer_size", object_pose_buffer_size_, 10000); // recieve data buffer from master
+  ros::param::param<int>("~object_pose_buffer_size", object_pose_buffer_size_, 24); // recieve data buffer from master
   ros::param::param<int>("~message_buffer_size", message_buffer_size_, 1000); // send data buffer to master
   ros::param::param<std::string>("~master_ip_address", master_ip_address_, "None"); // master ip address
   ros::param::param<double>("~grasp_offset", grasp_offset_, 0.1); // offset for grasping
