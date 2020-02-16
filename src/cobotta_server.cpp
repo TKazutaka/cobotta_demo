@@ -42,7 +42,7 @@ int main(int argc, char** argv)
   std::string reference_link_name = "world";
   std::string object_basename = "object";
   unsigned int object_number = 1;
-  std::string object_name = object_basename + "_" + to_string(object_number);
+  std::string object_name = object_basename + "_" + to_string(object_number) + "_static";
 
   std::unordered_map<std::string, std::vector<geometry_msgs::TransformStamped>> object_transforms;
   std::unordered_map<std::string, std::vector<geometry_msgs::TransformStamped>> client_trasforms;
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
       break;
     }
     object_number++;
-    object_name = object_basename + "_" + to_string(object_number);
+    object_name = object_basename + "_" + to_string(object_number) + "_static";
   }
 
   // Add algorithm for distribute tasks to each client here
@@ -144,15 +144,18 @@ int main(int argc, char** argv)
   std::string robot_names[] = {
     "cobotta_center", "cobotta_right", "cobotta_left"
   };
+  std::string static_object_name;
   for(auto trans : object_transforms)
   {
     try
     {
-      object_transform = tf_buffer.lookupTransform(robot_names[robot_num], trans.first + "_" + "static", lookup_time, ros::Duration(timeout));
+      static_object_name = trans.first;
+      std::cout << static_object_name << std::endl;
+      object_transform = tf_buffer.lookupTransform(robot_names[robot_num], trans.first, lookup_time, ros::Duration(timeout));
     }
     catch(tf2::TransformException &ex)
     {
-      ROS_ERROR("Cannot find %s objects", trans.first + "_" + "static");
+      ROS_ERROR("Cannot find %s objects", static_object_name);
     }
     client_trasforms[robot_names[robot_num]].push_back(object_transform);
     robot_num++;
@@ -165,7 +168,7 @@ int main(int argc, char** argv)
   std::cout <<client_trasforms["cobotta_center"].size()<< std::endl;
   std::cout <<client_trasforms["cobotta_left"].size()<< std::endl;
   std::cout <<client_trasforms["cobotta_right"].size()<< std::endl;
-  robot_num = 0;gi
+  robot_num = 0;
   for(auto client_trasform : client_trasforms)
   {
     for(auto trans : client_trasform.second)
